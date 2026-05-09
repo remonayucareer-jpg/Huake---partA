@@ -4,44 +4,45 @@ import pandas as pd
 # 设置页面配置
 st.set_page_config(page_title="酒店周报数据分析", layout="wide")
 
-# --- 样式微调：居中对齐 & 标题重排 ---
+# --- 样式极致对齐版 ---
 st.markdown("""
     <style>
     @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap');
     html, body, [data-testid="stAppViewContainer"] { font-family: 'Inter', sans-serif; background-color: #FFFFFF; }
     
+    /* 标题区域 */
     .header-container { padding: 1.5rem 0; border-bottom: 2px solid #E2E8F0; margin-bottom: 1.5rem; }
-    .header-title { color: #0F172A; font-size: 2.2rem; font-weight: 800; text-align: left; }
+    .header-title { color: #0F172A; font-size: 2.2rem; font-weight: 800; }
     .header-date { color: #64748B; font-size: 1.1rem; margin-top: 8px; font-weight: 500; }
     .header-part { color: #1E293B; font-size: 1.3rem; font-weight: 700; margin-top: 12px; border-left: 4px solid #2563EB; padding-left: 12px; }
 
-    .stColumn { display: flex; flex-direction: column; gap: 12px; }
+    /* 布局容器：缩小间距以对齐高度 */
+    .stColumn { display: flex; flex-direction: column; gap: 8px !important; } /* 间距由12px调为8px */
 
-    /* 通用卡片样式 */
     .data-box {
         border: 1px solid #E2E8F0;
-        padding: 1.5rem;
+        padding: 1rem;
         border-radius: 8px;
         background-color: #FFFFFF;
         display: flex;
         flex-direction: column;
-        justify-content: center; /* 垂直居中 */
-        align-items: center;     /* 水平居中 */
-        text-align: center;      /* 文字居中 */
+        justify-content: center; 
+        align-items: center;     
+        text-align: center;      
         width: 100%;
         box-sizing: border-box;
     }
     
-    .name-text { color: #1E293B; font-size: 1rem; font-weight: 700; margin-bottom: 6px; }
-    .sub-text { color: #94A3B8; font-size: 0.8rem; line-height: 1.3; margin-bottom: 12px; }
-    .value-text { color: #2563EB; font-size: 2rem; font-weight: 800; }
+    .name-text { color: #1E293B; font-size: 0.9rem; font-weight: 700; margin-bottom: 4px; }
+    .sub-text { color: #94A3B8; font-size: 0.75rem; line-height: 1.2; margin-bottom: 8px; }
+    .value-text { color: #2563EB; font-size: 1.8rem; font-weight: 800; }
     .rate-value { color: #059669; }
 
-    /* 严格维持高度尺寸 */
-    .h-5 { min-height: 698px; }
-    .h-3 { min-height: 414px; }
-    .h-2 { min-height: 272px; }
-    .h-1 { min-height: 130px; }
+    /* 高度精准微调：确保 (5个h-1 + 4个gap) = h-5 */
+    .h-5 { min-height: 672px; } /* 总高保持稳定 */
+    .h-3 { min-height: 400px; }
+    .h-2 { min-height: 264px; }
+    .h-1 { min-height: 128px; } /* 稍微缩减了2px以抵消间距影响 */
     
     .highlight-border { border: 2px solid #2563EB !important; background-color: #F8FAFC; }
     </style>
@@ -73,13 +74,14 @@ def run_analysis(df_cloud, df_ext):
     overall_rate = (idx3 + idx4 + idx7) / idx1 if idx1 > 0 else 0
     return locals()
 
-# --- 顶栏渲染 ---
+# --- 侧边栏 ---
 with st.sidebar:
     st.title("数据配置")
     up_cloud = st.file_uploader("1. 级联云原始数据", type=["xlsx"])
     up_ext = st.file_uploader("2. 分机号数据库", type=["xlsx"])
     date_val = st.text_input("统计日期", "2024.04.30 - 2024.05.06")
 
+# --- 顶栏渲染 ---
 st.markdown(f"""
     <div class="header-container">
         <div class="header-title">酒店周报数据分析</div>
@@ -88,7 +90,7 @@ st.markdown(f"""
     </div>
     """, unsafe_allow_html=True)
 
-# --- 看板内容 ---
+# --- 布局核心 ---
 if up_cloud and up_ext:
     data = run_analysis(pd.read_excel(up_cloud), pd.read_excel(up_ext))
     cols = st.columns(5)
@@ -98,21 +100,22 @@ if up_cloud and up_ext:
 
     with cols[1]:
         st.markdown(f'<div class="data-box h-3"><div class="name-text">进入AI接待流程电话量</div><div class="sub-text">AI语音环节总量</div><div class="value-text">{data["idx2"]}</div></div>', unsafe_allow_html=True)
-        st.markdown(f'<div class="data-box h-2"><div class="name-text">直接进入人工接待流程电话量</div><div class="sub-text">未触发AI，直接外呼转人工量</div><div class="value-text">{data["idx9"]}</div></div>', unsafe_allow_html=True)
+        st.markdown(f'<div class="data-box h-2"><div class="name-text">直接进入人工接待</div><div class="sub-text">未触发AI直接外呼</div><div class="value-text">{data["idx9"]}</div></div>', unsafe_allow_html=True)
 
     with cols[2]:
-        st.markdown(f'<div class="data-box h-1"><div class="name-text">AI接通量①</div><div class="sub-text">AI完成，未转人工</div><div class="value-text">{data["idx3"]}</div></div>', unsafe_allow_html=True)
-        st.markdown(f'<div class="data-box h-1"><div class="name-text">AI接通量②</div><div class="sub-text">转接人工并接通</div><div class="value-text">{data["idx4"]}</div></div>', unsafe_allow_html=True)
-        st.markdown(f'<div class="data-box h-1"><div class="name-text">AI接通量③</div><div class="sub-text">转接人工未接通</div><div class="value-text">{data["idx5"]}</div></div>', unsafe_allow_html=True)
-        st.markdown(f'<div class="data-box h-1"><div class="name-text">人工接通量④</div><div class="sub-text">直接转人工并接通</div><div class="value-text">{data["idx7"]}</div></div>', unsafe_allow_html=True)
-        st.markdown(f'<div class="data-box h-1"><div class="name-text">人工未接通量⑤</div><div class="sub-text">直接转人工未接通</div><div class="value-text">{data["idx8"]}</div></div>', unsafe_allow_html=True)
+        # 第三列：5个小格子，确保高度与 h-5 严格相等
+        st.markdown(f'<div class="data-box h-1"><div class="name-text">AI接通量①</div><div class="sub-text">AI完成</div><div class="value-text">{data["idx3"]}</div></div>', unsafe_allow_html=True)
+        st.markdown(f'<div class="data-box h-1"><div class="name-text">AI接通量②</div><div class="sub-text">转人工接通</div><div class="value-text">{data["idx4"]}</div></div>', unsafe_allow_html=True)
+        st.markdown(f'<div class="data-box h-1"><div class="name-text">AI接通量③</div><div class="sub-text">转人工未接通</div><div class="value-text">{data["idx5"]}</div></div>', unsafe_allow_html=True)
+        st.markdown(f'<div class="data-box h-1"><div class="name-text">人工接通量④</div><div class="sub-text">直接人工接通</div><div class="value-text">{data["idx7"]}</div></div>', unsafe_allow_html=True)
+        st.markdown(f'<div class="data-box h-1"><div class="name-text">人工未接通量⑤</div><div class="sub-text">直接人工未接通</div><div class="value-text">{data["idx8"]}</div></div>', unsafe_allow_html=True)
 
     with cols[3]:
         st.markdown(f'<div class="data-box h-3"><div class="name-text">AI成功接通率</div><div class="sub-text">(①+②+③) / AI总量</div><div class="value-text rate-value">{data["idx6"]:.1%}</div></div>', unsafe_allow_html=True)
-        st.markdown(f'<div class="data-box h-2"><div class="name-text">人工成功接通率</div><div class="sub-text">最终人工环节占比</div><div class="value-text rate-value">{data["idx10"]:.1%}</div></div>', unsafe_allow_html=True)
+        st.markdown(f'<div class="data-box h-2"><div class="name-text">人工成功接通率</div><div class="sub-text">人工环节占比</div><div class="value-text rate-value">{data["idx10"]:.1%}</div></div>', unsafe_allow_html=True)
 
     with cols[4]:
-        st.markdown(f'<div class="data-box h-5 highlight-border"><div class="name-text" style="color: #2563EB;">整体电话成功接通率</div><div class="sub-text">全口径成功处理比例</div><div class="value-text" style="font-size: 2.2rem; color: #2563EB;">{data["overall_rate"]:.1%}</div></div>', unsafe_allow_html=True)
+        st.markdown(f'<div class="data-box h-5 highlight-border"><div class="name-text" style="color: #2563EB;">整体电话成功接通率</div><div class="sub-text">全口径成功比例</div><div class="value-text" style="font-size: 2.2rem; color: #2563EB;">{data["overall_rate"]:.1%}</div></div>', unsafe_allow_html=True)
 
 else:
-    st.info("👋 请在侧边栏上传 Excel 数据文件以生成周报。")
+    st.info("👋 请上传 Excel 文件开始分析。")
