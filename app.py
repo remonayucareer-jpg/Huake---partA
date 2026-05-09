@@ -2,45 +2,55 @@ import streamlit as st
 import pandas as pd
 
 # 设置页面配置
-st.set_page_config(page_title="酒店AI+人工效能分析看板", layout="wide")
+st.set_page_config(page_title="酒店周报数据分析", layout="wide")
 
-# --- 极简 CSS：核心在于控制卡片高度和对齐 ---
+# --- 核心 CSS：重点在于居中对齐和标题样式 ---
 st.markdown("""
     <style>
     @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap');
     html, body, [data-testid="stAppViewContainer"] { font-family: 'Inter', sans-serif; background-color: #FFFFFF; }
     
+    /* 标题区样式 */
+    .header-container { padding: 1.5rem 0; margin-bottom: 2rem; border-bottom: 1px solid #F1F5F9; }
+    .main-title { color: #0F172A; font-size: 2.2rem; font-weight: 800; margin-bottom: 8px; }
+    .sub-title-group { color: #64748B; font-size: 1.1rem; font-weight: 500; }
+    .part-label { color: #1E293B; font-size: 1.2rem; font-weight: 700; margin-top: 10px; display: block; }
+
     /* 容器对齐 */
     .stColumn { display: flex; flex-direction: column; gap: 12px; }
 
     .data-box {
         border: 1px solid #E2E8F0;
-        padding: 1.2rem;
-        border-radius: 8px;
+        padding: 1.5rem;
+        border-radius: 12px;
         background-color: #FFFFFF;
         display: flex;
         flex-direction: column;
-        justify-content: center;
+        justify-content: center; /* 垂直居中 */
+        align-items: center;    /* 水平居中 */
+        text-align: center;     /* 文字居中 */
         width: 100%;
         box-sizing: border-box;
+        transition: all 0.3s ease;
     }
+    .data-box:hover { border-color: #3B82F6; box-shadow: 0 4px 12px rgba(0,0,0,0.05); }
     
-    .name-text { color: #1E293B; font-size: 0.95rem; font-weight: 700; margin-bottom: 2px; }
-    .sub-text { color: #94A3B8; font-size: 0.75rem; line-height: 1.2; margin-bottom: 8px; }
-    .value-text { color: #2563EB; font-size: 1.8rem; font-weight: 800; margin-top: auto; }
+    .name-text { color: #475569; font-size: 1rem; font-weight: 700; margin-bottom: 6px; }
+    .sub-text { color: #94A3B8; font-size: 0.8rem; line-height: 1.4; margin-bottom: 12px; min-height: 2.4rem; }
+    .value-text { color: #1E40AF; font-size: 2rem; font-weight: 800; }
     .rate-value { color: #059669; }
 
-    /* 高度控制：1行单位高度约130px (含间隔) */
-    .h-5 { min-height: 698px; } /* 占5行 */
-    .h-3 { min-height: 414px; } /* 占3行 */
-    .h-2 { min-height: 272px; } /* 占2行 */
-    .h-1 { min-height: 130px; } /* 占1行 */
+    /* 高度控制 */
+    .h-5 { min-height: 710px; } 
+    .h-3 { min-height: 422px; } 
+    .h-2 { min-height: 276px; } 
+    .h-1 { min-height: 132px; } 
     
-    .highlight-border { border: 2px solid #2563EB !important; background-color: #F8FAFC; }
+    .highlight-border { border: 2.5px solid #2563EB !important; background-color: #F8FAFC; }
     </style>
     """, unsafe_allow_html=True)
 
-# --- 逻辑部分 (保持不变) ---
+# --- 数据逻辑 ---
 def run_analysis(df_cloud, df_ext):
     def clean_num(x):
         if pd.isna(x): return None
@@ -66,41 +76,53 @@ def run_analysis(df_cloud, df_ext):
     overall_rate = (idx3 + idx4 + idx7) / idx1 if idx1 > 0 else 0
     return locals()
 
-# --- 布局部分 ---
-st.title("酒店电话效能分析报告")
+# --- 侧边栏 ---
+with st.sidebar:
+    st.header("⚙️ 数据配置")
+    up_cloud = st.file_uploader("1. 级联云原始数据", type=["xlsx"])
+    up_ext = st.file_uploader("2. 分机号数据库", type=["xlsx"])
+    date_range = st.text_input("报告周期", "0430 - 0506")
 
-if up_cloud := st.sidebar.file_uploader("1. 级联云原始数据", type=["xlsx"]):
-    if up_ext := st.sidebar.file_uploader("2. 分机号数据库", type=["xlsx"]):
-        data = run_analysis(pd.read_excel(up_cloud), pd.read_excel(up_ext))
-        
-        # 使用 Streamlit Columns 分出 5 列
-        cols = st.columns(5)
+# --- 页面标题区 ---
+st.markdown(f"""
+    <div class="header-container">
+        <div class="main-title">酒店周报数据分析</div>
+        <div class="sub-title-group">
+            <span>数据周期：{date_range}</span>
+            <span class="part-label">PART1：酒店电话数据</span>
+        </div>
+    </div>
+    """, unsafe_allow_html=True)
 
-        # 第一列：总来电量 (跨5行)
-        with cols[0]:
-            st.markdown(f'<div class="data-box h-5"><div class="name-text">总来电量</div><div class="sub-text">(所有启用AI的客房呼出)</div><div class="value-text">{data["idx1"]}</div></div>', unsafe_allow_html=True)
+if up_cloud and up_ext:
+    data = run_analysis(pd.read_excel(up_cloud), pd.read_excel(up_ext))
+    cols = st.columns(5)
 
-        # 第二列：分流
-        with cols[1]:
-            st.markdown(f'<div class="data-box h-3"><div class="name-text">进入AI接待流程</div><div class="sub-text">AI语音环节总量</div><div class="value-text">{data["idx2"]}</div></div>', unsafe_allow_html=True)
-            st.markdown(f'<div class="data-box h-2"><div class="name-text">直接进入人工接待</div><div class="sub-text">未触发AI，直接外呼转人工</div><div class="value-text">{data["idx9"]}</div></div>', unsafe_allow_html=True)
+    # 第1列：总来电量
+    with cols[0]:
+        st.markdown(f'<div class="data-box h-5"><div class="name-text">总来电量</div><div class="sub-text">(所有启用AI的客房呼出电话量)</div><div class="value-text">{data["idx1"]}</div></div>', unsafe_allow_html=True)
 
-        # 第三列：细分 (1+1+1+1+1)
-        with cols[2]:
-            st.markdown(f'<div class="data-box h-1"><div class="name-text">AI接通量①</div><div class="sub-text">AI完成</div><div class="value-text">{data["idx3"]}</div></div>', unsafe_allow_html=True)
-            st.markdown(f'<div class="data-box h-1"><div class="name-text">AI接通量②</div><div class="sub-text">AI转人工接通</div><div class="value-text">{data["idx4"]}</div></div>', unsafe_allow_html=True)
-            st.markdown(f'<div class="data-box h-1"><div class="name-text">AI接通量③</div><div class="sub-text">AI转人工未接通</div><div class="value-text">{data["idx5"]}</div></div>', unsafe_allow_html=True)
-            st.markdown(f'<div class="data-box h-1"><div class="name-text">人工接通量④</div><div class="sub-text">直接转人工接通</div><div class="value-text">{data["idx7"]}</div></div>', unsafe_allow_html=True)
-            st.markdown(f'<div class="data-box h-1"><div class="name-text">人工未接通量⑤</div><div class="sub-text">直接转人工未接通</div><div class="value-text">{data["idx8"]}</div></div>', unsafe_allow_html=True)
+    # 第2列：分流
+    with cols[1]:
+        st.markdown(f'<div class="data-box h-3"><div class="name-text">进入AI接待流程电话量</div><div class="sub-text">进入AI语音环节总量</div><div class="value-text">{data["idx2"]}</div></div>', unsafe_allow_html=True)
+        st.markdown(f'<div class="data-box h-2"><div class="name-text">直接进入人工接待流程电话量</div><div class="sub-text">未触发AI，直接外呼转人工量</div><div class="value-text">{data["idx9"]}</div></div>', unsafe_allow_html=True)
 
-        # 第四列：成功率
-        with cols[3]:
-            st.markdown(f'<div class="data-box h-3"><div class="name-text">AI成功接通率</div><div class="sub-text">(①+②+③) / AI总量</div><div class="value-text rate-value">{data["idx6"]:.1%}</div></div>', unsafe_allow_html=True)
-            st.markdown(f'<div class="data-box h-2"><div class="name-text">人工成功接通率</div><div class="sub-text">人工环节综合占比</div><div class="value-text rate-value">{data["idx10"]:.1%}</div></div>', unsafe_allow_html=True)
+    # 第3列：细分
+    with cols[2]:
+        st.markdown(f'<div class="data-box h-1"><div class="name-text">AI接通量①</div><div class="sub-text">AI完成，未转人工</div><div class="value-text">{data["idx3"]}</div></div>', unsafe_allow_html=True)
+        st.markdown(f'<div class="data-box h-1"><div class="name-text">AI接通量②</div><div class="sub-text">AI转人工且接通</div><div class="value-text">{data["idx4"]}</div></div>', unsafe_allow_html=True)
+        st.markdown(f'<div class="data-box h-1"><div class="name-text">AI接通量③</div><div class="sub-text">AI转人工未接通</div><div class="value-text">{data["idx5"]}</div></div>', unsafe_allow_html=True)
+        st.markdown(f'<div class="data-box h-1"><div class="name-text">人工接通量④</div><div class="sub-text">直接转人工且接通</div><div class="value-text">{data["idx7"]}</div></div>', unsafe_allow_html=True)
+        st.markdown(f'<div class="data-box h-1"><div class="name-text">人工未接通量⑤</div><div class="sub-text">直接转人工未接通</div><div class="value-text">{data["idx8"]}</div></div>', unsafe_allow_html=True)
 
-        # 第五列：终极指标
-        with cols[4]:
-            st.markdown(f'<div class="data-box h-5 highlight-border"><div class="name-text" style="color: #2563EB;">整体电话成功率</div><div class="sub-text">全口径处理比例</div><div class="value-text" style="font-size: 2.2rem; color: #2563EB;">{data["overall_rate"]:.1%}</div></div>', unsafe_allow_html=True)
+    # 第4列：率指标
+    with cols[3]:
+        st.markdown(f'<div class="data-box h-3"><div class="name-text">AI成功接通率</div><div class="sub-text">(①+②+③) / AI流程总量</div><div class="value-text rate-value">{data["idx6"]:.1%}</div></div>', unsafe_allow_html=True)
+        st.markdown(f'<div class="data-box h-2"><div class="name-text">人工成功接通率</div><div class="sub-text">人工环节综合接通占比</div><div class="value-text rate-value">{data["idx10"]:.1%}</div></div>', unsafe_allow_html=True)
+
+    # 第5列：整体指标
+    with cols[4]:
+        st.markdown(f'<div class="data-box h-5 highlight-border"><div class="name-text" style="color: #2563EB;">整体电话成功接通率</div><div class="sub-text">全口径成功处理比例</div><div class="value-text" style="font-size: 2.4rem; color: #2563EB;">{data["overall_rate"]:.1%}</div></div>', unsafe_allow_html=True)
 
 else:
-    st.info("请在侧边栏上传数据。")
+    st.info("💡 请在左侧侧边栏上传 Excel 文件开始分析。")
