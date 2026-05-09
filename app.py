@@ -4,7 +4,7 @@ import pandas as pd
 # 设置页面配置
 st.set_page_config(page_title="酒店周报数据分析", layout="wide")
 
-# --- 样式极致对齐版 ---
+# --- 视觉微调版 CSS ---
 st.markdown("""
     <style>
     @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap');
@@ -16,8 +16,8 @@ st.markdown("""
     .header-date { color: #64748B; font-size: 1.1rem; margin-top: 8px; font-weight: 500; }
     .header-part { color: #1E293B; font-size: 1.3rem; font-weight: 700; margin-top: 12px; border-left: 4px solid #2563EB; padding-left: 12px; }
 
-    /* 布局容器：缩小间距以对齐高度 */
-    .stColumn { display: flex; flex-direction: column; gap: 8px !important; } /* 间距由12px调为8px */
+    /* 布局容器 */
+    .stColumn { display: flex; flex-direction: column; gap: 8px !important; }
 
     .data-box {
         border: 1px solid #E2E8F0;
@@ -33,16 +33,19 @@ st.markdown("""
         box-sizing: border-box;
     }
     
-    .name-text { color: #1E293B; font-size: 0.9rem; font-weight: 700; margin-bottom: 4px; }
-    .sub-text { color: #94A3B8; font-size: 0.75rem; line-height: 1.2; margin-bottom: 8px; }
-    .value-text { color: #2563EB; font-size: 1.8rem; font-weight: 800; }
-    .rate-value { color: #059669; }
+    /* 字体大小微调 */
+    .name-text { color: #1E293B; font-size: 16px; font-weight: 700; margin-bottom: 6px; }
+    .sub-text { color: #94A3B8; font-size: 14px; line-height: 1.2; margin-bottom: 10px; }
+    .value-text { color: #1E293B; font-size: 34px; font-weight: 800; } /* 颜色改为深灰蓝 */
+    
+    /* 特殊颜色处理：成功率类指标依然可以保留一点亮色，或者全部统一 */
+    .rate-value { color: #1E293B; } /* 响应你的要求，全部统一为深色 */
 
-    /* 高度精准微调：确保 (5个h-1 + 4个gap) = h-5 */
-    .h-5 { min-height: 672px; } /* 总高保持稳定 */
+    /* 高度精准对齐 */
+    .h-5 { min-height: 672px; }
     .h-3 { min-height: 400px; }
     .h-2 { min-height: 264px; }
-    .h-1 { min-height: 128px; } /* 稍微缩减了2px以抵消间距影响 */
+    .h-1 { min-height: 128px; }
     
     .highlight-border { border: 2px solid #2563EB !important; background-color: #F8FAFC; }
     </style>
@@ -103,7 +106,6 @@ if up_cloud and up_ext:
         st.markdown(f'<div class="data-box h-2"><div class="name-text">直接进入人工接待</div><div class="sub-text">未触发AI直接外呼</div><div class="value-text">{data["idx9"]}</div></div>', unsafe_allow_html=True)
 
     with cols[2]:
-        # 第三列：5个小格子，确保高度与 h-5 严格相等
         st.markdown(f'<div class="data-box h-1"><div class="name-text">AI接通量①</div><div class="sub-text">AI完成</div><div class="value-text">{data["idx3"]}</div></div>', unsafe_allow_html=True)
         st.markdown(f'<div class="data-box h-1"><div class="name-text">AI接通量②</div><div class="sub-text">转人工接通</div><div class="value-text">{data["idx4"]}</div></div>', unsafe_allow_html=True)
         st.markdown(f'<div class="data-box h-1"><div class="name-text">AI接通量③</div><div class="sub-text">转人工未接通</div><div class="value-text">{data["idx5"]}</div></div>', unsafe_allow_html=True)
@@ -115,7 +117,8 @@ if up_cloud and up_ext:
         st.markdown(f'<div class="data-box h-2"><div class="name-text">人工成功接通率</div><div class="sub-text">人工环节占比</div><div class="value-text rate-value">{data["idx10"]:.1%}</div></div>', unsafe_allow_html=True)
 
     with cols[4]:
-        st.markdown(f'<div class="data-box h-5 highlight-border"><div class="name-text" style="color: #2563EB;">整体电话成功接通率</div><div class="sub-text">全口径成功比例</div><div class="value-text" style="font-size: 2.2rem; color: #2563EB;">{data["overall_rate"]:.1%}</div></div>', unsafe_allow_html=True)
+        # 整体成功率卡片，为了美观，其数值也调整为 1E293B，但边框保留蓝色以示重点
+        st.markdown(f'<div class="data-box h-5 highlight-border"><div class="name-text" style="color: #1E293B;">整体电话成功接通率</div><div class="sub-text">全口径成功比例</div><div class="value-text" style="font-size: 38px; color: #1E293B;">{data["overall_rate"]:.1%}</div></div>', unsafe_allow_html=True)
 
 else:
-    st.info("👋 请上传 Excel 文件开始分析。")
+    st.info("👋 字体与颜色已更新，请上传数据文件预览。")
