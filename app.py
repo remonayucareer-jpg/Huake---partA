@@ -103,7 +103,6 @@ st.markdown("""
     </style>
     """, unsafe_allow_html=True)
 
-# --- 核心计算引擎 (保持指标计算 100% 准确) ---
 def run_analysis(df_cloud, df_ext):
     def clean_num(x):
         if pd.isna(x): return None
@@ -120,34 +119,50 @@ def run_analysis(df_cloud, df_ext):
     df_cloud['主叫_清洗'] = df_cloud['主叫号码'].apply(clean_num)
     df_real = df_cloud[df_cloud['主叫_清洗'].isin(ext_set)].copy()
 
-    # --- 算力中心：指标 1-10 ---
-    idx1 = len(df_real) # 总来电量
+    # --- 核心指标计算 ---
+    idx1 = len(df_real)
     
-    # AI 环节 (指标 3, 4, 5)
+    # AI 环节
     idx3 = len(df_real[(df_real['通话状态'] == '接通') & (df_real['AI通话状态'] == '接通') & (df_real['人工通话状态'] == '--')])
     idx4 = len(df_real[(df_real['通话状态'] == '接通') & (df_real['AI通话状态'] == '接通') & (df_real['人工通话状态'] == '接通')])
     idx5 = len(df_real[(df_real['通话状态'] == '接通') & (df_real['AI通话状态'] == '接通') & (df_real['人工通话状态'] == '未接通')])
-    idx2 = idx3 + idx4 + idx5 # 进入AI量
-    idx6 = (idx3 + idx4 + idx5) / idx2 if idx2 > 0 else 0 # AI成功接通率
+    idx2 = idx3 + idx4 + idx5
+    idx6 = idx2 / idx2 if idx2 > 0 else 0 # 注意：这里根据你之前的定义，AI接通率通常是100%，除非有特殊定义
 
-    # 人工环节 (指标 7, 8)
+    # 人工环节
     idx7 = len(df_real[(df_real['通话状态'] == '接通') & (df_real['AI通话状态'] == '--') & (df_real['人工通话状态'] == '接通')])
     d1_8 = len(df_real[(df_real['通话状态'] == '未接通') & (df_real['AI通话状态'] == '--') & (df_real['人工通话状态'] == '--')])
     d2_8 = len(df_real[(df_real['通话状态'] == '未接通') & (df_real['AI通话状态'] == '--') & (df_real['人工通话状态'] == '未接通')])
-    idx8 = d1_8 + d2_8 # 指标 8：直接进人工失败 (复合逻辑)
+    idx8 = d1_8 + d2_8
+    idx9 = idx7 + idx8
 
-    idx9 = idx7 + idx8 # 直接进入人工总量
-    
-    # 指标 10：最终人工成功接通率
+    # 指标 10 相关
     num_10 = idx4 + idx7
     den_10 = idx4 + idx7 + idx5 + idx8
     idx10 = num_10 / den_10 if den_10 > 0 else 0
 
     # 整体效率
-    overall_ans = idx3 + idx4 + idx7
-    overall_rate = overall_ans / idx1 if idx1 > 0 else 0
+    overall_rate = (idx3 + idx4 + idx7) / idx1 if idx1 > 0 else 0
 
-    return locals() # 将局部变量打包返回
+    # --- 显式封装字典 (解决 KeyError 的关键) ---
+    results = {
+        "idx1": idx1,
+        "idx2": idx2,
+        "idx3": idx3,
+        "idx4": idx4,
+        "idx5": idx5,
+        "idx6": idx6,
+        "idx7": idx7,
+        "idx8": idx8,
+        "idx9": idx9,
+        "idx10": idx10,
+        "d1_8": d1_8,
+        "d2_8": d2_8,
+        "human_num": num_10,
+        "human_den": den_10,
+        "overall_rate": overall_rate
+    }
+    return results
 
 # --- UI 渲染层 ---
 # 侧边栏
