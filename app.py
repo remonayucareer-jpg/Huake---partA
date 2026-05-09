@@ -106,8 +106,8 @@ st.markdown(f"""
 if up_cloud and up_ext:
     data = run_analysis(pd.read_excel(up_cloud), pd.read_excel(up_ext))
 
-    # --- PART 2: 核心指标概览 (两行显示) ---
-    st.markdown('<div class="header-part">PART 2：核心指标概览</div>', unsafe_allow_html=True)
+    # --- PART 1：流程明细数据 (两行显示) ---
+    st.markdown('<div class="header-part">PART 1：流程明细数据</div>', unsafe_allow_html=True)
     
     # 第一行：AI 相关
     row1_cols = st.columns([1, 1, 1, 4]) # 后面留白保持紧凑感
@@ -129,8 +129,8 @@ if up_cloud and up_ext:
     with row2_cols[2]:
         st.markdown(f'<div class="data-box h-summary"><div class="name-text">人工接通率</div><div class="value-text-p2">{data["p2_human_rate"]:.1%}</div></div>', unsafe_allow_html=True)
 
-    # --- PART 1: 酒店电话数据 (数值变蓝) ---
-    st.markdown('<div class="header-part">PART 1：流程明细数据</div>', unsafe_allow_html=True)
+    # --- PART 2: 核心指标概览 (数值变蓝) ---
+    st.markdown('<div class="header-part">PART 2：核心指标概览</div>', unsafe_allow_html=True)
     cols = st.columns(5)
 
     with cols[0]:
