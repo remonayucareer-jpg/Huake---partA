@@ -106,8 +106,8 @@ st.markdown(f"""
 if up_cloud and up_ext:
     data = run_analysis(pd.read_excel(up_cloud), pd.read_excel(up_ext))
 
-    # --- PART 1：流程明细数据 (两行显示) ---
-    st.markdown('<div class="header-part">PART 1：流程明细数据</div>', unsafe_allow_html=True)
+    # --- PART 1：酒店电话数据 (两行显示) ---
+    st.markdown('<div class="header-part">PART 1：酒店电话数据</div>', unsafe_allow_html=True)
     
     # 第一行：AI 相关
     row1_cols = st.columns([1, 1, 1, 4]) # 后面留白保持紧凑感
