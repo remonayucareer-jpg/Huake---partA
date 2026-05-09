@@ -4,38 +4,47 @@ import pandas as pd
 # 设置页面配置
 st.set_page_config(page_title="酒店AI+人工效能分析看板", layout="wide")
 
-# --- 高级 CSS：简约干净的表格风格 ---
+# --- 高级 CSS：极简数据看板风格 ---
 st.markdown("""
     <style>
     @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap');
     html, body, [data-testid="stAppViewContainer"] { font-family: 'Inter', sans-serif; background-color: #FFFFFF; }
     
-    /* 标题样式 */
-    .header-container { padding: 1rem 0; border-bottom: 2px solid #F1F5F9; margin-bottom: 1.5rem; }
+    .header-container { padding: 1rem 0; border-bottom: 1px solid #E2E8F0; margin-bottom: 2rem; }
     .header-title { color: #0F172A; font-size: 1.8rem; font-weight: 700; }
     .header-subtitle { color: #64748B; font-size: 0.9rem; margin-top: 4px; }
 
-    /* 模块标题 */
-    .part-title { font-size: 1.2rem; font-weight: 700; color: #1E293B; padding: 1rem 0; border-top: 1px solid #F1F5F9; }
+    .part-title { font-size: 1.1rem; font-weight: 700; color: #475569; margin: 2rem 0 1rem 0; text-transform: uppercase; letter-spacing: 0.05em; }
 
-    /* 数据展示卡片：简约表格感 */
+    /* 纵向对齐的卡片容器 */
+    .metric-container {
+        display: flex;
+        flex-direction: column;
+        gap: 1rem;
+    }
+
     .data-box {
         border: 1px solid #E2E8F0;
-        padding: 1rem;
-        border-radius: 4px;
-        background-color: #F8FAFC;
-        height: 100%;
+        padding: 1.2rem;
+        border-radius: 8px;
+        background-color: #FFFFFF;
+        text-align: left;
+        min-height: 120px;
+        display: flex;
+        flex-direction: column;
+        justify-content: space-between;
     }
-    .metric-name { color: #475569; font-size: 0.85rem; font-weight: 600; }
-    .metric-value { color: #0F172A; font-size: 1.5rem; font-weight: 700; margin: 0.3rem 0; }
-    .metric-sub { color: #94A3B8; font-size: 0.75rem; line-height: 1.2; }
-
-    /* 成功率高亮 */
-    .rate-highlight { color: #2563EB; font-size: 1.8rem; font-weight: 800; }
+    
+    .name-text { color: #1E293B; font-size: 0.95rem; font-weight: 700; margin-bottom: 2px; }
+    .sub-text { color: #94A3B8; font-size: 0.75rem; line-height: 1.3; margin-bottom: 10px; min-height: 2em; }
+    .value-text { color: #2563EB; font-size: 1.8rem; font-weight: 800; margin-top: auto; }
+    
+    /* 成功率类数字使用更显眼的颜色 */
+    .rate-value { color: #059669; } 
     </style>
     """, unsafe_allow_html=True)
 
-# --- 核心计算函数 (逻辑保持不变) ---
+# --- 核心计算函数 ---
 def run_analysis(df_cloud, df_ext):
     def clean_num(x):
         if pd.isna(x): return None
@@ -50,14 +59,14 @@ def run_analysis(df_cloud, df_ext):
     df_cloud['主叫_清洗'] = df_cloud['主叫号码'].apply(clean_num)
     df_real = df_cloud[df_cloud['主叫_清洗'].isin(ext_set)].copy()
 
+    # 指标计算逻辑
     idx1 = len(df_real)
     idx3 = len(df_real[(df_real['通话状态'] == '接通') & (df_real['AI通话状态'] == '接通') & (df_real['人工通话状态'] == '--')])
     idx4 = len(df_real[(df_real['通话状态'] == '接通') & (df_real['AI通话状态'] == '接通') & (df_real['人工通话状态'] == '接通')])
     idx5 = len(df_real[(df_real['通话状态'] == '接通') & (df_real['AI通话状态'] == '接通') & (df_real['人工通话状态'] == '未接通')])
     idx2 = idx3 + idx4 + idx5
-    idx6 = idx2 / idx2 if idx2 > 0 else 0 # 对应你提到的计算逻辑：(1+2+3)/2
+    idx6 = idx2 / idx2 if idx2 > 0 else 0 
 
-    # 人工环节
     idx7 = len(df_real[(df_real['通话状态'] == '接通') & (df_real['AI通话状态'] == '--') & (df_real['人工通话状态'] == '接通')])
     d1_8 = len(df_real[(df_real['通话状态'] == '未接通') & (df_real['AI通话状态'] == '--') & (df_real['人工通话状态'] == '--')])
     d2_8 = len(df_real[(df_real['通话状态'] == '未接通') & (df_real['AI通话状态'] == '--') & (df_real['人工通话状态'] == '未接通')])
@@ -67,20 +76,20 @@ def run_analysis(df_cloud, df_ext):
     num_10 = idx4 + idx7
     den_10 = idx4 + idx7 + idx5 + idx8
     idx10 = num_10 / den_10 if den_10 > 0 else 0
+    
+    overall_rate = (idx3 + idx4 + idx7) / idx1 if idx1 > 0 else 0
 
     return locals()
 
-# --- 界面展示 ---
+# --- 界面渲染 ---
 
-# 1. 侧边栏 (仅保留文件上传)
 with st.sidebar:
     st.title("控制台")
     up_cloud = st.file_uploader("1. 级联云原始数据", type=["xlsx"])
     up_ext = st.file_uploader("2. 分机号数据库", type=["xlsx"])
     st.divider()
-    st.caption("内部自用校验版 v4.0")
+    st.caption("内部自用校验版 v4.1")
 
-# 2. 顶部标题 (保留原设计的专业感)
 st.markdown("""
     <div class="header-container">
         <div class="header-title">酒店电话效能全口径分析</div>
@@ -91,54 +100,95 @@ st.markdown("""
 if up_cloud and up_ext:
     data = run_analysis(pd.read_excel(up_cloud), pd.read_excel(up_ext))
     
-    # --- 第一部分：给我自己看的部分 (PART 1) ---
-    st.markdown('<div class="part-title">PART 1：酒店电话数据 (内部校验)</div>', unsafe_allow_html=True)
+    st.markdown('<div class="part-title">PART 1：酒店电话数据 (内部校验流)</div>', unsafe_allow_html=True)
 
-    # 布局 A：AI 环节指标呈现 (使用权重模拟面积配比)
-    # 指标1(1) : 指标2(1/2) : 指标3/4/5(1/6各一份) : 指标6(1/2)
-    # 转换为列权重比例：6 : 3 : 1 : 1 : 1 : 3
-    c1, c2, c3, c4, c5, c6 = st.columns([6, 3, 1, 1, 1, 3])
+    # 核心 5 列布局
+    c1, c2, c3, c4, c5 = st.columns(5)
 
-    with c1:
-        st.markdown(f'<div class="data-box"><div class="metric-name">指标 1：总来电量</div><div class="metric-value">{data["idx1"]}</div><div class="metric-sub">(所有启用AI的客房呼出电话量)</div></div>', unsafe_allow_html=True)
-    
-    with c2:
-        st.markdown(f'<div class="data-box"><div class="metric-name">指标 2：进入AI接待流程</div><div class="metric-value">{data["idx2"]}</div><div class="metric-sub">进入AI环节的总量</div></div>', unsafe_allow_html=True)
+    with c1: # 第一列：总源头
+        st.markdown(f"""
+            <div class="metric-container">
+                <div class="data-box">
+                    <div class="name-text">总来电量</div>
+                    <div class="sub-text">(所有启用AI的客房呼出电话量)</div>
+                    <div class="value-text">{data['idx1']}</div>
+                </div>
+            </div>
+        """, unsafe_allow_html=True)
 
-    with c3:
-        st.markdown(f'<div class="data-box"><div class="metric-name">指标 3：AI接通量①</div><div class="metric-value">{data["idx3"]}</div><div class="metric-sub">(AI接通，AI完成，未转人工)</div></div>', unsafe_allow_html=True)
+    with c2: # 第二列：分流层
+        st.markdown(f"""
+            <div class="metric-container">
+                <div class="data-box">
+                    <div class="name-text">进入AI接待流程电话量</div>
+                    <div class="sub-text">进入AI语音环节总量</div>
+                    <div class="value-text">{data['idx2']}</div>
+                </div>
+                <div class="data-box">
+                    <div class="name-text">直接进入人工接待流程电话量</div>
+                    <div class="sub-text">未触发AI，直接外呼转人工量</div>
+                    <div class="value-text">{data['idx9']}</div>
+                </div>
+            </div>
+        """, unsafe_allow_html=True)
 
-    with c4:
-        st.markdown(f'<div class="data-box"><div class="metric-name">指标 4：AI接通量②</div><div class="metric-value">{data["idx4"]}</div><div class="metric-sub">(AI接通，转接人工，人工接通)</div></div>', unsafe_allow_html=True)
+    with c3: # 第三列：行为细分
+        st.markdown(f"""
+            <div class="metric-container">
+                <div class="data-box">
+                    <div class="name-text">AI接通量①</div>
+                    <div class="sub-text">(AI接通，AI完成，未转人工)</div>
+                    <div class="value-text">{data['idx3']}</div>
+                </div>
+                <div class="data-box">
+                    <div class="name-text">AI接通量②</div>
+                    <div class="sub-text">(AI接通，转接人工，人工接通)</div>
+                    <div class="value-text">{data['idx4']}</div>
+                </div>
+                <div class="data-box">
+                    <div class="name-text">AI接通量③</div>
+                    <div class="sub-text">(AI接通，转接人工，人工未接通)</div>
+                    <div class="value-text">{data['idx5']}</div>
+                </div>
+                <div class="data-box">
+                    <div class="name-text">人工接通④</div>
+                    <div class="sub-text">(直接转接人工，人工接通)</div>
+                    <div class="value-text">{data['idx7']}</div>
+                </div>
+                <div class="data-box">
+                    <div class="name-text">人工未接通量⑤</div>
+                    <div class="sub-text">(直接进人工，人工未接通或客户放弃量)</div>
+                    <div class="value-text">{data['idx8']}</div>
+                </div>
+            </div>
+        """, unsafe_allow_html=True)
 
-    with c5:
-        st.markdown(f'<div class="data-box"><div class="metric-name">指标 5：AI接通量③</div><div class="metric-value">{data["idx5"]}</div><div class="metric-sub">(AI接通，转接人工，人工未接通)</div></div>', unsafe_allow_html=True)
+    with c4: # 第四列：过程成功率
+        st.markdown(f"""
+            <div class="metric-container">
+                <div class="data-box">
+                    <div class="name-text">AI成功接通率</div>
+                    <div class="sub-text">(AI接通量①+②+③ / 进入AI接待流程电话量)</div>
+                    <div class="value-text rate-value">{data['idx6']:.1%}</div>
+                </div>
+                <div class="data-box">
+                    <div class="name-text">人工成功接通率</div>
+                    <div class="sub-text">(最终人工环节接通占比)</div>
+                    <div class="value-text rate-value">{data['idx10']:.1%}</div>
+                </div>
+            </div>
+        """, unsafe_allow_html=True)
 
-    with c6:
-        st.markdown(f'<div class="data-box"><div class="metric-name">指标 6：AI成功接通率</div><div class="metric-value rate-highlight">{data["idx6"]:.1%}</div><div class="metric-sub">(①+②+③/指标2)</div></div>', unsafe_allow_html=True)
-
-    st.markdown("<br>", unsafe_allow_html=True)
-
-    # 布局 B：人工环节指标呈现
-    # 这里我们延续简约的比例，重点突出指标 10
-    h1, h2, h3, h4 = st.columns([1, 1, 1, 1.5])
-    
-    with h1:
-        st.markdown(f'<div class="data-box"><div class="metric-name">指标 7：人工接通④</div><div class="metric-value">{data["idx7"]}</div><div class="metric-sub">(直接转接人工，人工接通)</div></div>', unsafe_allow_html=True)
-    
-    with h2:
-        st.markdown(f'<div class="data-box"><div class="metric-name">指标 8：人工未接通量⑤</div><div class="metric-value">{data["idx8"]}</div><div class="metric-sub">(直接进人工，人工未接通或客户放弃量)</div></div>', unsafe_allow_html=True)
-
-    with h3:
-        st.markdown(f'<div class="data-box"><div class="metric-name">指标 9：直接进入人工流程</div><div class="metric-value">{data["idx9"]}</div><div class="metric-sub">不经过AI，直接转人工总量</div></div>', unsafe_allow_html=True)
-
-    with h4:
-        st.markdown(f'<div class="data-box"><div class="metric-name">指标 10：人工成功接通率</div><div class="metric-value rate-highlight">{data["idx10"]:.1%}</div><div class="metric-sub">(最终对外展示核心指标)</div></div>', unsafe_allow_html=True)
-
-    # 底部校验详情
-    with st.expander("📝 内部数据校验日志"):
-        st.write(f"指标 8 详情：[未接通/--/--]: {data['d1_8']} | [未接通/--/未接通]: {data['d2_8']}")
-        st.write(f"人工分母校验 (4+7+5+8): {data['den_10']}")
+    with c5: # 第五列：终极指标
+        st.markdown(f"""
+            <div class="metric-container">
+                <div class="data-box" style="border: 2px solid #2563EB;">
+                    <div class="name-text" style="color: #2563EB;">整体电话成功接通率</div>
+                    <div class="sub-text">全口径成功处理比例</div>
+                    <div class="value-text rate-value" style="font-size: 2.2rem;">{data['overall_rate']:.1%}</div>
+                </div>
+            </div>
+        """, unsafe_allow_html=True)
 
 else:
     st.info("👋 请在左侧上传 Excel 数据开始分析。")
