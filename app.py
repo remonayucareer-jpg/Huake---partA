@@ -32,15 +32,19 @@ st.markdown("""
         text-align: center;      
         width: 100%;
         box-sizing: border-box;
+        user-select: text !important;
     }
     
-    /* 颜色统一调整为 #1E293B */
     .name-text { color: #1E293B; font-size: 0.9rem; font-weight: 700; margin-bottom: 4px; }
     .sub-text { color: #94A3B8; font-size: 0.75rem; line-height: 1.2; margin-bottom: 8px; }
-    .value-text { color: #1E293B; font-size: 1.8rem; font-weight: 800; }
     
-    /* 高度定义 */
-    .h-summary { min-height: 120px; } /* 第二部分汇总卡片的高度 */
+    /* PART 1 数值：科学蓝色 */
+    .value-text-p1 { color: #2563EB; font-size: 1.8rem; font-weight: 800; }
+    
+    /* PART 2 数值：稳重的深蓝色 */
+    .value-text-p2 { color: #1E293B; font-size: 1.6rem; font-weight: 800; }
+    
+    .h-summary { min-height: 110px; } 
     .h-5 { min-height: 672px; }
     .h-3 { min-height: 400px; }
     .h-2 { min-height: 264px; }
@@ -62,7 +66,6 @@ def run_analysis(df_cloud, df_ext):
     df_cloud['主叫_清洗'] = df_cloud['主叫号码'].apply(clean_num)
     df_real = df_cloud[df_cloud['主叫_清洗'].isin(ext_set)].copy()
     
-    # 基础指标计算
     idx1 = len(df_real)
     idx3 = len(df_real[(df_real['通话状态'] == '接通') & (df_real['AI通话状态'] == '接通') & (df_real['人工通话状态'] == '--')])
     idx4 = len(df_real[(df_real['通话状态'] == '接通') & (df_real['AI通话状态'] == '接通') & (df_real['人工通话状态'] == '接通')])
@@ -76,14 +79,13 @@ def run_analysis(df_cloud, df_ext):
     idx10 = num_10 / den_10 if den_10 > 0 else 0
     overall_rate = (idx3 + idx4 + idx7) / idx1 if idx1 > 0 else 0
 
-    # --- 新增：第二部分汇总指标计算 ---
-    part2_total_call = idx1
-    part2_ai_call = idx2
-    part2_ai_connect = idx3 + idx4 + idx5
-    part2_ai_rate = part2_ai_connect / part2_ai_call if part2_ai_call > 0 else 0
-    part2_human_call = idx4 + idx5 + idx7 + idx8
-    part2_human_connect = idx4 + idx7
-    part2_human_rate = idx10 # 直接复用原人工接通率逻辑
+    # 汇总指标计算
+    p2_ai_call = idx2
+    p2_ai_connect = idx3 + idx4 + idx5
+    p2_ai_rate = p2_ai_connect / p2_ai_call if p2_ai_call > 0 else 0
+    p2_human_call = idx4 + idx5 + idx7 + idx8
+    p2_human_connect = idx4 + idx7
+    p2_human_rate = idx10 
 
     return locals()
 
@@ -94,7 +96,6 @@ with st.sidebar:
     up_ext = st.file_uploader("2. 分机号数据库", type=["xlsx"])
     date_val = st.text_input("统计日期", "2024.04.30 - 2024.05.06")
 
-# --- 顶栏 ---
 st.markdown(f"""
     <div class="header-container">
         <div class="header-title">酒店周报数据分析</div>
@@ -105,53 +106,53 @@ st.markdown(f"""
 if up_cloud and up_ext:
     data = run_analysis(pd.read_excel(up_cloud), pd.read_excel(up_ext))
 
-    # --- PART 2: 汇总数据展示 (置于上方) ---
+    # --- PART 2: 核心指标概览 (两行显示) ---
     st.markdown('<div class="header-part">PART 2：核心指标概览</div>', unsafe_allow_html=True)
-    p2_cols = st.columns(7) # 7个数据指标
     
-    p2_metrics = [
-        ("总来电量", data["part2_total_call"], ""),
-        ("进入AI电话量", data["part2_ai_call"], ""),
-        ("AI接通量", data["part2_ai_connect"], ""),
-        ("AI接通率", f"{data['part2_ai_rate']:.1%}", ""),
-        ("进入人工电话量", data["part2_human_call"], ""),
-        ("人工接通量", data["part2_human_connect"], ""),
-        ("人工接通率", f"{data['part2_human_rate']:.1%}", "")
-    ]
+    # 第一行：AI 相关
+    row1_cols = st.columns([1, 1, 1, 4]) # 后面留白保持紧凑感
+    with row1_cols[0]:
+        st.markdown(f'<div class="data-box h-summary"><div class="name-text">AI电话量</div><div class="value-text-p2">{data["p2_ai_call"]}</div></div>', unsafe_allow_html=True)
+    with row1_cols[1]:
+        st.markdown(f'<div class="data-box h-summary"><div class="name-text">AI接通量</div><div class="value-text-p2">{data["p2_ai_connect"]}</div></div>', unsafe_allow_html=True)
+    with row1_cols[2]:
+        st.markdown(f'<div class="data-box h-summary"><div class="name-text">AI接通率</div><div class="value-text-p2">{data["p2_ai_rate"]:.1%}</div></div>', unsafe_allow_html=True)
 
-    for i, (name, val, sub) in enumerate(p2_metrics):
-        with p2_cols[i]:
-            st.markdown(f"""
-                <div class="data-box h-summary">
-                    <div class="name-text">{name}</div>
-                    <div class="value-text" style="font-size: 1.5rem;">{val}</div>
-                </div>
-            """, unsafe_allow_html=True)
+    st.write("") # 增加行间距
 
-    # --- PART 1: 酒店电话数据细节 (置于下方) ---
+    # 第二行：人工 相关
+    row2_cols = st.columns([1, 1, 1, 4])
+    with row2_cols[0]:
+        st.markdown(f'<div class="data-box h-summary"><div class="name-text">进入人工电话量</div><div class="value-text-p2">{data["p2_human_call"]}</div></div>', unsafe_allow_html=True)
+    with row2_cols[1]:
+        st.markdown(f'<div class="data-box h-summary"><div class="name-text">人工接通量</div><div class="value-text-p2">{data["p2_human_connect"]}</div></div>', unsafe_allow_html=True)
+    with row2_cols[2]:
+        st.markdown(f'<div class="data-box h-summary"><div class="name-text">人工接通率</div><div class="value-text-p2">{data["p2_human_rate"]:.1%}</div></div>', unsafe_allow_html=True)
+
+    # --- PART 1: 酒店电话数据 (数值变蓝) ---
     st.markdown('<div class="header-part">PART 1：流程明细数据</div>', unsafe_allow_html=True)
     cols = st.columns(5)
 
     with cols[0]:
-        st.markdown(f'<div class="data-box h-5"><div class="name-text">总来电量</div><div class="sub-text">(所有启用AI的客房呼出量)</div><div class="value-text">{data["idx1"]}</div></div>', unsafe_allow_html=True)
+        st.markdown(f'<div class="data-box h-5"><div class="name-text">总来电量</div><div class="sub-text">(客房呼出量)</div><div class="value-text-p1">{data["idx1"]}</div></div>', unsafe_allow_html=True)
 
     with cols[1]:
-        st.markdown(f'<div class="data-box h-3"><div class="name-text">进入AI接待流程电话量</div><div class="sub-text">AI语音环节总量</div><div class="value-text">{data["idx2"]}</div></div>', unsafe_allow_html=True)
-        st.markdown(f'<div class="data-box h-2"><div class="name-text">直接进入人工接待</div><div class="sub-text">未触发AI直接外呼</div><div class="value-text">{data["idx9"]}</div></div>', unsafe_allow_html=True)
+        st.markdown(f'<div class="data-box h-3"><div class="name-text">进入AI流程量</div><div class="sub-text">AI语音环节</div><div class="value-text-p1">{data["idx2"]}</div></div>', unsafe_allow_html=True)
+        st.markdown(f'<div class="data-box h-2"><div class="name-text">直接进入人工</div><div class="sub-text">未触发AI</div><div class="value-text-p1">{data["idx9"]}</div></div>', unsafe_allow_html=True)
 
     with cols[2]:
-        st.markdown(f'<div class="data-box h-1"><div class="name-text">AI接通量①</div><div class="sub-text">AI完成</div><div class="value-text">{data["idx3"]}</div></div>', unsafe_allow_html=True)
-        st.markdown(f'<div class="data-box h-1"><div class="name-text">AI接通量②</div><div class="sub-text">转人工接通</div><div class="value-text">{data["idx4"]}</div></div>', unsafe_allow_html=True)
-        st.markdown(f'<div class="data-box h-1"><div class="name-text">AI接通量③</div><div class="sub-text">转人工未接通</div><div class="value-text">{data["idx5"]}</div></div>', unsafe_allow_html=True)
-        st.markdown(f'<div class="data-box h-1"><div class="name-text">人工接通量④</div><div class="sub-text">直接人工接通</div><div class="value-text">{data["idx7"]}</div></div>', unsafe_allow_html=True)
-        st.markdown(f'<div class="data-box h-1"><div class="name-text">人工未接通量⑤</div><div class="sub-text">直接人工未接通</div><div class="value-text">{data["idx8"]}</div></div>', unsafe_allow_html=True)
+        st.markdown(f'<div class="data-box h-1"><div class="name-text">AI接通①</div><div class="value-text-p1">{data["idx3"]}</div></div>', unsafe_allow_html=True)
+        st.markdown(f'<div class="data-box h-1"><div class="name-text">AI接通②</div><div class="value-text-p1">{data["idx4"]}</div></div>', unsafe_allow_html=True)
+        st.markdown(f'<div class="data-box h-1"><div class="name-text">AI接通③</div><div class="value-text-p1">{data["idx5"]}</div></div>', unsafe_allow_html=True)
+        st.markdown(f'<div class="data-box h-1"><div class="name-text">人工接通④</div><div class="value-text-p1">{data["idx7"]}</div></div>', unsafe_allow_html=True)
+        st.markdown(f'<div class="data-box h-1"><div class="name-text">人工未接通⑤</div><div class="value-text-p1">{data["idx8"]}</div></div>', unsafe_allow_html=True)
 
     with cols[3]:
-        st.markdown(f'<div class="data-box h-3"><div class="name-text">AI成功接通率</div><div class="sub-text">(①+②+③) / AI总量</div><div class="value-text">{data["idx6"]:.1%}</div></div>', unsafe_allow_html=True)
-        st.markdown(f'<div class="data-box h-2"><div class="name-text">人工成功接通率</div><div class="sub-text">人工环节占比</div><div class="value-text">{data["idx10"]:.1%}</div></div>', unsafe_allow_html=True)
+        st.markdown(f'<div class="data-box h-3"><div class="name-text">AI成功接通率</div><div class="value-text-p1">{data["idx6"]:.1%}</div></div>', unsafe_allow_html=True)
+        st.markdown(f'<div class="data-box h-2"><div class="name-text">人工成功接通率</div><div class="value-text-p1">{data["idx10"]:.1%}</div></div>', unsafe_allow_html=True)
 
     with cols[4]:
-        st.markdown(f'<div class="data-box h-5 highlight-border"><div class="name-text">整体电话成功接通率</div><div class="sub-text">全口径成功比例</div><div class="value-text" style="font-size: 2.2rem;">{data["overall_rate"]:.1%}</div></div>', unsafe_allow_html=True)
+        st.markdown(f'<div class="data-box h-5 highlight-border"><div class="name-text">整体接通率</div><div class="sub-text">全口径比例</div><div class="value-text-p1" style="font-size: 2.2rem;">{data["overall_rate"]:.1%}</div></div>', unsafe_allow_html=True)
 
 else:
-    st.info("👋 请上传 Excel 文件开始分析。")
+    st.info("👋 颜色已换成科学蓝，两行汇总已就绪。")
